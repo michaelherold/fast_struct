@@ -20,17 +20,68 @@ module FastStruct
       attr_reader :props
     end
 
+    class DefaultParser
+      require "prism"
+
+      DEFAULT_KEYWORD = "default"
+
+      def initialize(file:, line:)
+        @file = file
+        @line = line
+      end
+
+      attr_reader :file
+      attr_reader :line
+
+      def parse
+        tree = Prism.parse(IO.readlines(file)[line]).value
+        visitor = Visitor.new
+
+        tree.accept visitor
+
+        visitor.default
+      end
+
+      class Visitor < Prism::Visitor
+        def initialize
+          super
+          @default = nil
+          @nilable = false
+        end
+
+        attr_reader :default
+
+        def visit_assoc_node(node)
+          if node.key.value == DEFAULT_KEYWORD
+            @default = node.value.body.slice
+          end
+        end
+      end
+    end
+
     class Props
       def initialize
         @props = {}
       end
 
-      def const(name, type)
-        @props[name] = Const.new(name, type)
+      def const(name, type, default: nil)
+        default_definition =
+          if default
+            file, line = default.source_location
+            DefaultParser.new(file:, line: line - 1).parse
+          end
+
+        @props[name] = Const.new(name, type, default: default_definition)
       end
 
-      def prop(name, type)
-        @props[name] = Prop.new(name, type)
+      def prop(name, type, default: nil)
+        default_definition =
+          if default
+            file, line = default.source_location
+            DefaultParser.new(file:, line: line - 1).parse
+          end
+
+        @props[name] = Prop.new(name, type, default: default_definition)
       end
 
       def each_value
@@ -57,11 +108,13 @@ module FastStruct
       end
 
       class Const
-        def initialize(name, type)
+        def initialize(name, type, default:)
           @name = name
           @type = type
+          @default = default
         end
 
+        attr_reader :default
         attr_reader :name
         attr_reader :type
 
@@ -71,11 +124,13 @@ module FastStruct
       end
 
       class Prop
-        def initialize(name, type)
+        def initialize(name, type, default:)
           @name = name
           @type = type
+          @default = default
         end
 
+        attr_reader :default
         attr_reader :name
         attr_reader :type
 
