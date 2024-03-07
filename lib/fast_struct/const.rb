@@ -15,5 +15,9 @@ module FastStruct
     def definition
       "attr_reader :#{@name}"
     end
+
+    def writeable?
+      false
+    end
   end
 end

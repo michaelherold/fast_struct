@@ -24,13 +24,17 @@ module FastStruct
       @props[name] = Prop.new(name, type, default: default_definition)
     end
 
-    private
-
     def each_value
       return to_enum(__callee__) unless block_given?
 
       @props.each_value { |value| yield value }
     end
+
+    def empty?
+      @props.empty?
+    end
+
+    private
 
     def define_attributes(struct)
       attr_methods = each_value.map(&:definition).join("\n")

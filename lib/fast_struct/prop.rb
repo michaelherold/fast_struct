@@ -15,5 +15,9 @@ module FastStruct
     def definition
       "attr_accessor :#{@name}"
     end
+
+    def writeable?
+      true
+    end
   end
 end
