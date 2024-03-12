@@ -9,11 +9,13 @@ module FastStruct
         define do
           const :x, Numeric, default: -> { 0 }
           prop :y, Numeric, default: -> { 1 }
+          const :z, Numeric, default: proc { 2 }
         end
       end
 
       assert_equal 0, my_struct.new.x
       assert_equal 1, my_struct.new.y
+      assert_equal 2, my_struct.new.z
     end
 
     def test_no_default_requires_an_argument

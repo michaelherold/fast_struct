@@ -168,7 +168,7 @@ module FastStruct
       def visit_assoc_node(node)
         case (value = node.value)
         when Prism::CallNode
-          if value.name == :lambda
+          if value.name == :lambda || value.name == :proc
             @default = value.block.body.slice
           end
         when Prism::LambdaNode
