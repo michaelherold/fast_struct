@@ -10,12 +10,14 @@ module FastStruct
           const :x, Numeric, default: -> { 0 }
           prop :y, Numeric, default: -> { 1 }
           const :z, Numeric, default: proc { 2 }
+          prop :a, Numeric, default: Proc.new { 3 } # standard:disable Style/Proc
         end
       end
 
       assert_equal 0, my_struct.new.x
       assert_equal 1, my_struct.new.y
       assert_equal 2, my_struct.new.z
+      assert_equal 3, my_struct.new.a
     end
 
     def test_no_default_requires_an_argument

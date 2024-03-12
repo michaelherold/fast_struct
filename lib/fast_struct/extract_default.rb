@@ -168,7 +168,7 @@ module FastStruct
       def visit_assoc_node(node)
         case (value = node.value)
         when Prism::CallNode
-          if value.name == :lambda || value.name == :proc
+          if value.name == :lambda || value.name == :proc || proc_new?(value)
             @default = value.block.body.slice
           end
         when Prism::LambdaNode
@@ -176,6 +176,14 @@ module FastStruct
         end
 
         super
+      end
+
+      private
+
+      def proc_new?(node)
+        return false unless (receiver = node.receiver) && receiver.is_a?(Prism::ConstantReadNode)
+
+        node.name == :new && receiver.name == :Proc
       end
     end
 
