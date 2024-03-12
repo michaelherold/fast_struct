@@ -12,21 +12,19 @@ module FastStruct
       define_attributes(struct_class)
     end
 
-    def const(name, type, default: Undefined)
+    def const(name, type, default: nil)
       default_definition = extract_default(name, default)
 
       @props[name] = Const.new(name, type, default: default_definition)
     end
 
-    def prop(name, type, default: Undefined)
+    def prop(name, type, default: nil)
       default_definition = extract_default(name, default)
 
       @props[name] = Prop.new(name, type, default: default_definition)
     end
 
-    def each_value
-      return to_enum(__callee__) unless block_given?
-
+    def each_value(&block)
       @props.each_value { |value| yield value }
     end
 
@@ -37,14 +35,14 @@ module FastStruct
     private
 
     def define_attributes(struct)
-      attr_methods = each_value.map(&:definition).join("\n")
+      attr_methods = @props.each_value.map(&:definition).join("\n")
 
       struct.class_eval attr_methods
     end
 
     def define_initializer(struct)
-      parameters = each_value.map { |prop| "#{prop.name}: #{prop.default}" }.join(", ")
-      setters = each_value.map { |prop| "@#{prop.name} = #{prop.name}" }.join("\n")
+      parameters = @props.each_value.map { |prop| "#{prop.name}: #{prop.default}" }.join(", ")
+      setters = @props.each_value.map { |prop| "@#{prop.name} = #{prop.name}" }.join("\n")
 
       struct.class_eval <<~RUBY, __FILE__, __LINE__ + 1
         def initialize(#{parameters})
@@ -54,7 +52,7 @@ module FastStruct
     end
 
     def extract_default(name, default)
-      return if default == Undefined
+      return unless default
 
       ExtractDefault.call(name: name, from: default).tap do |result|
         raise FailedToExtractDefaultError unless result

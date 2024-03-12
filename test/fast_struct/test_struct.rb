@@ -78,6 +78,34 @@ module FastStruct
       end
     end
 
+    def test_raising_on_defaulting_to_an_empty_proc
+      assert_raises(FastStruct::FailedToExtractDefaultError) do
+        Class.new(FastStruct::Struct) do
+          define do
+            const :x, Numeric, default: proc {}
+          end
+        end
+      end
+
+      assert_raises(FastStruct::FailedToExtractDefaultError) do
+        Class.new(FastStruct::Struct) do
+          define do
+            const :x, Numeric, default: lambda {}
+          end
+        end
+      end
+    end
+
+    def test_raising_on_defaulting_to_a_block_argument_node
+      assert_raises(FastStruct::FailedToExtractDefaultError) do
+        Class.new(FastStruct::Struct) do
+          define do
+            const :x, Numeric, default: proc(&TestStruct.method(:a_spurious_method))
+          end
+        end
+      end
+    end
+
     def self.a_spurious_method = nil
 
     private

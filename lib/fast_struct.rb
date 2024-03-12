@@ -8,8 +8,6 @@ module FastStruct
   FailedToExtractDefaultError = Class.new(Error)
   RequiresSubclassError = Class.new(Error)
 
-  Undefined = Object.new.freeze
-
   autoload :Const, "fast_struct/const"
   autoload :ExtractDefault, "fast_struct/extract_default"
   autoload :Prop, "fast_struct/prop"

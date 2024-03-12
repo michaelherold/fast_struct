@@ -73,19 +73,25 @@ module FastStruct
       end
 
       def direct_superclass?(superclass)
-        superclass.is_a?(Prism::ConstantPathNode) &&
-          superclass.child.name == :Struct &&
-          superclass.parent.name == :FastStruct
+        return false unless superclass.is_a?(Prism::ConstantPathNode)
+        return false unless (child = superclass.child).is_a?(Prism::ConstantReadNode)
+        return false unless (parent = superclass.parent).is_a?(Prism::ConstantReadNode)
+
+        child.name == :Struct && parent.name == :FastStruct
       end
 
       def superclass_in_namespace?(superclass)
         name_of_superclass(superclass) == :Struct &&
-          @module_path.any? { |mod| mod.constant_path.name == :FastStruct }
+          @module_path.any? do |mod|
+            constant_path = mod.constant_path
+
+            constant_path.is_a?(Prism::ConstantReadNode) && constant_path.name == :FastStruct
+          end
       end
 
       def name_of_superclass(superclass)
-        if superclass.is_a?(Prism::ConstantPathNode)
-          superclass.child.name
+        if superclass.is_a?(Prism::ConstantPathNode) && (child = superclass.child).is_a?(Prism::ConstantReadNode)
+          child.name
         else
           superclass.name
         end
@@ -139,7 +145,7 @@ module FastStruct
         method = node.name
 
         if (method == :const || method == :prop) &&
-            node.arguments.arguments.first.slice == @name.inspect
+            node.arguments&.arguments&.first&.slice == @name.inspect
 
           @property_node = node
           return
@@ -168,17 +174,23 @@ module FastStruct
       def visit_assoc_node(node)
         case (value = node.value)
         when Prism::CallNode
-          if value.name == :lambda || value.name == :proc || proc_new?(value)
-            @default = value.block.body.slice
+          if (value.name == :lambda || value.name == :proc || proc_new?(value)) && (default = body_from_block(value))
+            @default = default
           end
         when Prism::LambdaNode
-          @default = value.body.slice
+          @default = value.body&.slice
         end
 
         super
       end
 
       private
+
+      def body_from_block(node)
+        return unless (blk = node.block) && blk.is_a?(Prism::BlockNode)
+
+        blk.body&.slice
+      end
 
       def proc_new?(node)
         return false unless (receiver = node.receiver) && receiver.is_a?(Prism::ConstantReadNode)

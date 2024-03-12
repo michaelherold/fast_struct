@@ -56,7 +56,7 @@ module Tapioca
 
         ConstantType = type_member { {fixed: T.class_of(::FastStruct::Struct)} }
 
-        sig { override.returns(T::Enumerable[ConstantType]) }
+        sig { override.returns(T::Enumerable[Module]) }
         def self.gather_constants
           all_classes
             .select { |klass| name_of(klass) && klass < ::FastStruct::Struct }

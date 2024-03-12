@@ -7,10 +7,11 @@ module FastStruct
         raise RequiresSubclassError, "`define' must be called on a subclass of #{self}"
       end
 
-      @props.call(self, &block)
+      props.call(self, &block)
     end
 
     def self.inherited(child)
+      super
       child.instance_variable_set(:@props, Props.new)
     end
 
