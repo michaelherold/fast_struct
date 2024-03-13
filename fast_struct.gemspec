@@ -17,6 +17,7 @@ Gem::Specification.new do |spec|
   spec.files = %w[CHANGELOG.md CONTRIBUTING.md LICENSE.md README.md UPGRADING.md]
   spec.files += %w[ksuid.gemspec]
   spec.files += Dir["lib/**/*.rb"]
+  spec.files += Dir["rbi/**/*.rb"]
   spec.require_paths = ["lib"]
 
   spec.metadata["homepage_uri"] = spec.homepage

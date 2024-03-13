@@ -1,3 +1,4 @@
+# typed: true
 # frozen_string_literal: true
 
 unless ENV["NO_COVERAGE"]
