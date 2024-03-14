@@ -1,0 +1,113 @@
+module FastStruct
+  VERSION: String
+
+  interface _Property
+    def initialize: (Symbol name, Module type, default: String?) -> void
+    def default: () -> String?
+    def definition: () -> String
+    def name: () -> Symbol
+    def type: () -> Module
+    def writeable?: () -> bool
+  end
+
+  class Error < StandardError
+  end
+
+  class FailedToExtractDefaultError < Error
+  end
+
+  class RequiresSubclassError < Error
+  end
+
+  class Const
+    include _Property
+  end
+
+  class ExtractDefault
+    type struct_node = (Prism::CallNode | Prism::ClassNode)
+
+    def self.call: (name: Symbol name, from: Proc) -> String?
+
+    private
+
+    class DefaultExtractor < Prism::Visitor
+      @default: String?
+
+      def self.extract: (Prism::CallNode property_node) -> String?
+
+      def initialize: () -> void
+      def extract: (Prism::CallNode property_node) -> String?
+      def visit_assoc_node: (Prism::AssocNode node) -> void
+
+      private
+
+      def body_from_block: (Prism::CallNode node) -> String?
+      def proc_new?: (Prism::CallNode node) -> bool
+    end
+
+    class DefineExtractor < Prism::Visitor
+      @define_node: Prism::CallNode?
+
+      def self.extract: (struct_node: struct_node) -> Prism::CallNode?
+
+      def initialize: () -> void
+      def extract: (struct_node struct_node) -> Prism::CallNode?
+      def visit_call_node: (Prism::CallNode node) -> void
+    end
+
+    class PropertyExtractor < Prism::Visitor
+      @name: Symbol
+      @property_node: Prism::CallNode?
+
+      def self.extract: (define_node: Prism::CallNode, name: Symbol) -> Prism::CallNode?
+
+      def initialize: (Symbol name) -> void
+      def extract: (Prism::CallNode define_node) -> Prism::CallNode?
+      def visit_call_node: (Prism::CallNode node) -> void
+    end
+
+    class StructExtractor < Prism::Visitor
+      @line: Integer
+      @struct_node: (Prism::CallNode | Prism::ClassNode)?
+      @module_path: Array[Prism::ModuleNode]
+
+      def self.extract: (line: Integer, tree: Prism::ProgramNode) -> struct_node?
+
+      def initialize: (line: Integer) -> void
+      def extract: (Prism::ProgramNode tree) -> struct_node?
+      def visit_module_node: (Prism::ModuleNode node) -> void
+      def visit_call_node: (Prism::CallNode node) -> void
+      def visit_class_node: (Prism::ClassNode node) -> void
+      def visit_struct_node: (struct_node node, superclass: Prism::Node) -> struct_node?
+
+      private
+
+      def direct_superclass?: (untyped superclass) -> bool
+      def struct_superclass?: (untyped superclass, parent: untyped) -> bool
+      def superclass_in_namespace?: (untyped superclass) -> bool
+      def name_of_superclass: (untyped superclass) -> Symbol
+    end
+  end
+
+  class Prop
+    include _Property
+  end
+
+  class Props
+    def initialize: () -> void
+    def call: (singleton(Struct) struct_class) { (*untyped) [self: Props] -> void } -> void
+    def const: (Symbol name, Module type, ?default: ^() -> untyped) -> void
+    def each_value: () { (_Property arg0) -> void } -> void
+    def empty?: () -> bool
+    def prop: (Symbol name, Module type, ?default: ^() -> untyped) -> void
+    def define_attributes: (singleton(Struct) struct) -> void
+    def define_initializer: (singleton(Struct) struct) -> void
+    def extract_default: (Symbol name, (^() -> untyped)? default) -> String?
+  end
+
+  class Struct
+    def self.define: () { (*untyped) [self: Props] -> void } -> void
+    def self.inherited: (Class child) -> void
+    def self.props: () -> FastStruct::Props
+  end
+end

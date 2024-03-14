@@ -18,6 +18,7 @@ Gem::Specification.new do |spec|
   spec.files += %w[ksuid.gemspec]
   spec.files += Dir["lib/**/*.rb"]
   spec.files += Dir["rbi/**/*.rb"]
+  spec.files += Dir["sig/**/*.rbs"]
   spec.require_paths = ["lib"]
 
   spec.metadata["homepage_uri"] = spec.homepage
