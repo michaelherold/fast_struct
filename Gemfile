@@ -9,7 +9,7 @@ group :development do
   gem "minitest", "~> 5.20"
   gem "rake", "~> 13.0"
   gem "standard", "~> 1.33"
-  gem "steep", "~> 1.6"
+  gem "steep", "~> 1.7.0.dev.2"
   gem "tapioca", "~> 0.12"
 end
 

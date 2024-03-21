@@ -14,7 +14,30 @@ module FastStruct
     attr_reader :type
 
     def definition
-      "attr_reader :#{@name}"
+      if FastStruct.sorbet_sigs_enabled?
+        <<~RUBY
+          sig { returns(#{@type}) }
+          attr_reader :#{@name}
+        RUBY
+      else
+        "attr_reader :#{@name}"
+      end
+    end
+
+    def to_initializer
+      "#{@name}: #{@default}"
+    end
+
+    def to_setter
+      if FastStruct.sorbet_sigs_enabled?
+        "@#{@name} = T.let(#{@name}, #{@type})"
+      else
+        "@#{@name} = #{@name}"
+      end
+    end
+
+    def to_sig_param
+      "#{@name}: #{@type}"
     end
 
     def writeable?

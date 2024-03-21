@@ -1,6 +1,8 @@
 module FastStruct
   VERSION: String
 
+  def self.sorbet_sigs_enabled?: -> bool
+
   interface _Property
     def initialize: (Symbol name, Module type, default: String?) -> void
     def default: () -> String?
@@ -17,6 +19,14 @@ module FastStruct
   end
 
   class RequiresSubclassError < Error
+  end
+
+  class Config
+    @sorbet_sigs_enabled: bool
+
+    attr_accessor sorbet_sigs_enabled: bool
+
+    def initialize: (?sorbet_sigs_enabled: bool) -> void
   end
 
   class Const
@@ -100,6 +110,10 @@ module FastStruct
     def each_value: () { (_Property arg0) -> void } -> void
     def empty?: () -> bool
     def prop: (Symbol name, Module type, ?default: ^() -> untyped) -> void
+
+    private
+
+    def add_sorbet_sig: (singleton(Struct) struct) -> void
     def define_attributes: (singleton(Struct) struct) -> void
     def define_initializer: (singleton(Struct) struct) -> void
     def extract_default: (Symbol name, (^() -> untyped)? default) -> String?

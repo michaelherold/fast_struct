@@ -9,6 +9,7 @@ module FastStruct
 
     def call(struct_class, &block)
       instance_exec(&block)
+      add_sorbet_sig(struct_class)
       define_initializer(struct_class)
       define_attributes(struct_class)
     end
@@ -35,6 +36,12 @@ module FastStruct
 
     private
 
+    def add_sorbet_sig(struct)
+      return unless FastStruct.sorbet_sigs_enabled?
+
+      struct.extend(T::Sig) # steep:ignore UnknownConstant
+    end
+
     def define_attributes(struct)
       attr_methods = @props.each_value.map(&:definition).join("\n")
 
@@ -42,10 +49,20 @@ module FastStruct
     end
 
     def define_initializer(struct)
-      parameters = @props.each_value.map { |prop| "#{prop.name}: #{prop.default}" }.join(", ")
-      setters = @props.each_value.map { |prop| "@#{prop.name} = #{prop.name}" }.join("\n")
+      parameters = @props.each_value.map(&:to_initializer).join(", ")
+      setters = @props.each_value.map(&:to_setter).join("\n")
+      sigs =
+        if FastStruct.sorbet_sigs_enabled?
+          params =
+            unless @props.empty?
+              "params(#{@props.each_value.map(&:to_sig_param).join(", ")})"
+            end
+
+          "sig { #{[params, "void"].compact.join(".")} }"
+        end
 
       struct.class_eval <<~RUBY, __FILE__, __LINE__ + 1
+        #{sigs}
         def initialize(#{parameters})
           #{setters}
         end
