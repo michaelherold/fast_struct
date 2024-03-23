@@ -86,10 +86,7 @@ module Tapioca
         sig do
           params(
             mod: RBI::Scope,
-            property: T.any(
-              ::FastStruct::Prop,
-              ::FastStruct::Const
-            )
+            property: ::FastStruct::Property
           ).void
         end
         def generate_methods_for_property(mod, property)

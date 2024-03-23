@@ -1,26 +1,10 @@
 # typed: true
 
-class FastStruct::Const
-  sig { params(name: ::Symbol, type: ::FastStruct::Type, default: T.nilable(::String)).void }
-  def initialize(name, type, default:)
-    @name = T.let(name, ::Symbol)
-    @type = T.let(type, T.any(::T::Types::Base, ::Module))
-    @default = T.let(default, T.nilable(String))
-  end
-
-  sig { returns(T.nilable(::String)) }
-  def default; end
-
-  sig { returns(::String) }
+class FastStruct::Const < FastStruct::Property
+  sig { override.returns(::String) }
   def definition; end
 
-  sig { returns(::Symbol) }
-  def name; end
-
-  sig { returns(::FastStruct::Type) }
-  def type; end
-
-  sig { returns(T::Boolean) }
+  sig { override.returns(T::Boolean) }
   def writeable?; end
 end
 
@@ -31,7 +15,17 @@ class FastStruct::ExtractDefault
   end
 end
 
-class FastStruct::Prop
+class FastStruct::Prop < FastStruct::Property
+  sig { override.returns(::String) }
+  def definition; end
+
+  sig { override.returns(T::Boolean) }
+  def writeable?; end
+end
+
+class FastStruct::Property
+  abstract!
+
   sig { params(name: ::Symbol, type: ::FastStruct::Type, default: T.nilable(::String)).void }
   def initialize(name, type, default:)
     @name = T.let(name, ::Symbol)
@@ -42,23 +36,32 @@ class FastStruct::Prop
   sig { returns(T.nilable(::String)) }
   def default; end
 
-  sig { returns(::String) }
+  sig { abstract.returns(::String) }
   def definition; end
 
   sig { returns(::Symbol) }
   def name; end
 
+  sig { returns(::String) }
+  def to_initializer; end
+
+  sig { returns(::String) }
+  def to_setter; end
+
+  sig { returns(::String) }
+  def to_sig_param; end
+
   sig { returns(::FastStruct::Type) }
   def type; end
 
-  sig { returns(T::Boolean) }
+  sig { abstract.returns(T::Boolean) }
   def writeable?; end
 end
 
 class FastStruct::Props
   sig { void }
   def initialize
-    @props = T.let({}, T::Hash[::Symbol, T.any(::FastStruct::Const, ::FastStruct::Prop)])
+    @props = T.let({}, T::Hash[::Symbol, ::FastStruct::Property])
   end
 
   sig { params(struct_class: T::Class[::FastStruct::Struct], block: T.proc.bind(::FastStruct::Props).params(arg0: T::Class[::FastStruct::Props]).returns(T.anything)).void }
@@ -67,7 +70,7 @@ class FastStruct::Props
   sig { params(name: ::Symbol, type: ::FastStruct::Type, default: T.nilable(T.proc.returns(T.untyped))).void }
   def const(name, type, default: T.unsafe(nil)); end
 
-  sig { params(block: T.proc.params(arg0: T.any(::FastStruct::Const, ::FastStruct::Prop)).returns(::BasicObject)).returns(T::Hash[::Symbol, T.any(::FastStruct::Const, ::FastStruct::Prop)]) }
+  sig { params(block: T.proc.params(arg0: ::FastStruct::Property).returns(::BasicObject)).returns(T::Hash[::Symbol, ::FastStruct::Property]) }
   def each_value(&block); end
 
   sig { returns(T::Boolean) }

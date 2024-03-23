@@ -13,6 +13,7 @@ module FastStruct
   autoload :Const, "fast_struct/const"
   autoload :ExtractDefault, "fast_struct/extract_default"
   autoload :Prop, "fast_struct/prop"
+  autoload :Property, "fast_struct/property"
   autoload :Props, "fast_struct/props"
 
   @config = Config.new

@@ -4,12 +4,8 @@ module FastStruct
   def self.sorbet_sigs_enabled?: -> bool
 
   interface _Property
-    def initialize: (Symbol name, Module type, default: String?) -> void
     def default: () -> String?
     def definition: () -> String
-    def name: () -> Symbol
-    def type: () -> Module
-    def writeable?: () -> bool
   end
 
   class Error < StandardError
@@ -29,7 +25,7 @@ module FastStruct
     def initialize: (?sorbet_sigs_enabled: bool) -> void
   end
 
-  class Const
+  class Const < Property
     include _Property
   end
 
@@ -99,15 +95,22 @@ module FastStruct
     end
   end
 
-  class Prop
+  class Prop < Property
     include _Property
+  end
+
+  class Property
+    def initialize: (Symbol name, Module type, default: String?) -> void
+    def default: () -> String?
+    def name: () -> Symbol
+    def type: () -> Module
   end
 
   class Props
     def initialize: () -> void
     def call: (singleton(Struct) struct_class) { (*untyped) [self: Props] -> void } -> void
     def const: (Symbol name, Module type, ?default: ^() -> untyped) -> void
-    def each_value: () { (_Property arg0) -> void } -> void
+    def each_value: () { (Property arg0) -> void } -> void
     def empty?: () -> bool
     def prop: (Symbol name, Module type, ?default: ^() -> untyped) -> void
 
