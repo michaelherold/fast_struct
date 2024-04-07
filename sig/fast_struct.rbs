@@ -1,6 +1,7 @@
 module FastStruct
   VERSION: String
 
+  def self.dry_types_enabled?: -> bool
   def self.sorbet_sigs_enabled?: -> bool
 
   interface _Property
@@ -28,6 +29,76 @@ module FastStruct
   class Const < Property
     include _Property
   end
+
+  class DryTypesCompiler
+    class Map
+      public
+
+      def key: () -> untyped
+      def value: () -> untyped
+
+      private
+
+      def initialize: (untyped key, untyped value) -> void
+    end
+
+    class Schema
+      include Enumerable[Hash[Symbol, untyped]]
+
+      public
+
+      def each: () { (Hash[Symbol, untyped]) -> void } -> void
+      def empty?: () -> bool
+
+      private
+
+      def initialize: (Array[untyped] attribute_info) -> void
+    end
+
+    class Sum
+      include Enumerable[Class]
+
+      public
+
+      def <<: (Class | NilClass | Sum arg) -> void
+      def each: () { (Class) -> void } -> void
+      def nilable?: () -> bool
+      def size: () -> Integer
+      def types: () -> Array[Class]
+
+      private
+
+      def initialize: () -> void
+    end
+
+    class Untyped
+    end
+
+    def self.call: (untyped type) -> String
+
+    def compile: (untyped node) -> String
+
+    private
+
+    def sum_to_sorbet_type: (Sum sum) -> untyped
+    def to_sorbet_type: (untyped klass) -> untyped
+    def visit: (untyped node) -> untyped
+    def visit_and: (untyped node) -> untyped
+    def visit_any: (untyped node) -> untyped
+    def visit_array: (untyped node) -> untyped
+    def visit_constrained: (untyped node) -> untyped
+    def visit_constructor: (untyped node) -> untyped
+    def visit_enum: (untyped node) -> untyped
+    def visit_hash: (untyped node) -> untyped
+    def visit_key: (untyped node) -> untyped
+    def visit_map: (untyped node) -> untyped
+    def visit_nominal: (untyped node) -> untyped
+    def visit_predicate: (untyped node) -> untyped
+    def visit_schema: (untyped node) -> untyped
+    def visit_struct: (untyped node) -> untyped
+    def visit_sum: (untyped node) -> untyped
+  end
+
 
   class ExtractDefault
     type struct_node = (Prism::CallNode | Prism::ClassNode)

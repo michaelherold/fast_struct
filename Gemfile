@@ -14,6 +14,8 @@ group :development do
 end
 
 group :test do
+  gem "dry-struct", "~> 1.6"
+  gem "dry-types", "~> 1.7"
   gem "minitest-reporters", "~> 1.6"
   gem "simplecov", "~> 0.22"
 end

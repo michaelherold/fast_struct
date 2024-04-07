@@ -26,6 +26,10 @@ module FastStruct
       @props[name] = Prop.new(name, type, default: default_definition)
     end
 
+    def at(name)
+      @props.fetch(name)
+    end
+
     def each_value(&block)
       @props.each_value { |value| yield value }
     end

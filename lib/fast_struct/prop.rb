@@ -5,8 +5,15 @@ module FastStruct
   class Prop < Property
     def definition
       if FastStruct.sorbet_sigs_enabled?
+        type =
+          if FastStruct.dry_types_enabled? && @type.is_a?(Dry::Types::Type) # steep:ignore UnknownConstant
+            DryTypesCompiler.call(@type)
+          else
+            @type
+          end
+
         <<~RUBY
-          sig { params(value: #{@type}).returns(#{@type}) }
+          sig { params(value: #{type}).returns(#{type}) }
           attr_accessor :#{@name}
         RUBY
       else

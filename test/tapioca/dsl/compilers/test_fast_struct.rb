@@ -133,6 +133,132 @@ module Tapioca
             end
           RBI
         end
+
+        def test_decorating_sorbet_mixed_with_dry_types
+          add_ruby_file("types.rb", <<~RUBY)
+            require "dry/types"
+
+            module Types
+              include Dry.Types()
+            end
+          RUBY
+
+          add_ruby_file("post.rb", <<~RUBY)
+            class Post < FastStruct::Struct
+              define do
+                const :title, Types::String.constrained(format: /\w+/) | Types::Nil
+                const :body, T.nilable(String)
+              end
+            end
+          RUBY
+
+          assert_equal <<~RBI, rbi_for(:Post)
+            # typed: strong
+
+            class Post
+              include FastStructGeneratedMethods
+
+              module FastStructGeneratedMethods
+                sig { returns(T.nilable(::String)) }
+                def body; end
+
+                sig { returns(::T.nilable(::String)) }
+                def title; end
+              end
+            end
+          RBI
+        end
+
+        def test_decorating_all_manner_of_dry_types
+          add_ruby_file("types.rb", <<~RUBY)
+            require "dry/types"
+
+            module Types
+              include Dry.Types()
+            end
+          RUBY
+
+          add_ruby_file("post.rb", <<~RUBY)
+            class Post < FastStruct::Struct
+              define do
+                const :a, Types::Nil | Types::String
+                const :b, Types::Hash.schema(name: Types::String)
+                const :c, Types::Array.of(Types::String)
+                const :d, Types::Integer.constrained(gt: 1, lt: 10)
+                const :e, Types.Constructor(String)
+                const :f, Types::String.enum("hi", "bye")
+                const :g, Types::Hash
+                const :h, Types::Hash.map(Types::Integer, Types::String)
+                const :i, Types::True | Types::False | Types::Nil
+                const :j, Types::Any
+                const :k, Types::Nil
+                const :l, Types.Instance(Range)
+                const :m, Types.Instance(Set)
+                const :n, Types.Instance(TrueClass)
+                const :o, Types::Any | Types::Nil
+                const :p, Types::Integer | Types::String
+              end
+            end
+          RUBY
+
+          assert_equal <<~RBI, rbi_for(:Post)
+            # typed: strong
+
+            class Post
+              include FastStructGeneratedMethods
+
+              module FastStructGeneratedMethods
+                sig { returns(::T.nilable(::String)) }
+                def a; end
+
+                sig { returns(::T::Hash[::Symbol, ::T.untyped]) }
+                def b; end
+
+                sig { returns(::T::Array[::String]) }
+                def c; end
+
+                sig { returns(::Integer) }
+                def d; end
+
+                sig { returns(::String) }
+                def e; end
+
+                sig { returns(::String) }
+                def f; end
+
+                sig { returns(::T::Hash[::T.untyped, ::T.untyped]) }
+                def g; end
+
+                sig { returns(::T::Hash[::Integer, ::String]) }
+                def h; end
+
+                sig { returns(::T.nilable(::T::Boolean)) }
+                def i; end
+
+                sig { returns(::T.untyped) }
+                def j; end
+
+                sig { returns(::NilClass) }
+                def k; end
+
+                sig { returns(::T::Range[::T.untyped]) }
+                def l; end
+
+                sig { returns(::T::Set[::T.untyped]) }
+                def m; end
+
+                sig { returns(::T::Boolean) }
+                def n; end
+
+                sig { returns(::T.nilable(::T.untyped)) }
+                def o; end
+
+                sig { returns(::T.any(::Integer, ::String)) }
+                def p; end
+              end
+            end
+          RBI
+        end
       end
     end
   end

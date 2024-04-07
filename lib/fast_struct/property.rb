@@ -18,15 +18,29 @@ module FastStruct
     end
 
     def to_setter
-      if FastStruct.sorbet_sigs_enabled?
-        "@#{@name} = T.let(#{@name}, #{@type})"
+      if FastStruct.dry_types_enabled? && @type.is_a?(Dry::Types::Type) # steep:ignore UnknownConstant
+        declaration = "self.class.props.at(:#{@name}).type.call(#{@name})"
+        type = DryTypesCompiler.call(@type)
       else
-        "@#{@name} = #{@name}"
+        declaration = @name.to_s
+        type = @type.to_s
+      end
+
+      if FastStruct.sorbet_sigs_enabled?
+        "@#{@name} = T.let(#{declaration}, #{type})"
+      elsif FastStruct.dry_types_enabled? && @type.is_a?(Dry::Types::Type) # steep:ignore UnknownConstant
+        "@#{@name} = #{declaration}"
+      else
+        "@#{@name} = #{declaration}"
       end
     end
 
     def to_sig_param
-      "#{@name}: #{@type}"
+      if defined?(Dry::Types::Type) && @type.is_a?(Dry::Types::Type) # steep:ignore UnknownConstant
+        "#{@name}: #{DryTypesCompiler.call(@type)}"
+      else
+        "#{@name}: #{@type}"
+      end
     end
   end
 end

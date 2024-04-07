@@ -11,6 +11,7 @@ module FastStruct
 
   autoload :Config, "fast_struct/config"
   autoload :Const, "fast_struct/const"
+  autoload :DryTypesCompiler, "fast_struct/dry_types_compiler"
   autoload :ExtractDefault, "fast_struct/extract_default"
   autoload :Prop, "fast_struct/prop"
   autoload :Property, "fast_struct/property"
@@ -20,6 +21,10 @@ module FastStruct
 
   def self.configure(&block)
     yield config
+  end
+
+  def self.dry_types_enabled?
+    defined?(Dry::Types) && config.dry_types_enabled
   end
 
   def self.sorbet_sigs_enabled?
