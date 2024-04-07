@@ -9,7 +9,19 @@ def has_data?
 end
 
 require "benchmark/ips"
+require "dry-initializer"
+require "dry/struct"
 require "fast_struct"
+
+module Types
+  include Dry.Types()
+
+  Numeric = Types::Instance(Numeric)
+  Default0 = Numeric.default(0)
+  Default1 = Numeric.default(1)
+  Default2 = Numeric.default(2)
+end
+
 
 class Fast < FastStruct::Struct
   define do
@@ -35,6 +47,20 @@ class PORO
 
   attr_reader :x, :y
   attr_accessor :z
+end
+
+class DryStruct < Dry::Struct
+  attribute :x, Types::Numeric
+  attribute :y, Types::Numeric
+  attribute :z, Types::Numeric
+end
+
+class DryInit
+  extend Dry::Initializer
+
+  option :x, type: Types::Numeric
+  option :y, type: Types::Numeric
+  option :z, type: Types::Numeric
 end
 
 module WithDefaults
@@ -73,6 +99,20 @@ module WithDefaults
     attr_reader :x, :y
     attr_accessor :z
   end
+
+  class DryStruct < Dry::Struct
+    attribute :x, Types::Default0
+    attribute :y, Types::Default1
+    attribute :z, Types::Default2
+  end
+
+  class DryInit
+    extend Dry::Initializer
+
+    option :x, type: Types::Numeric, default: -> { 0 }
+    option :y, type: Types::Numeric, default: -> { 1 }
+    option :z, type: Types::Numeric, default: -> { 2 }
+  end
 end
 
 def headline(message)
@@ -90,6 +130,8 @@ Benchmark.ips do |bench|
   bench.report("Struct") { StdLib.new(x: 1, y: 2, z: 3).x }
   bench.report("Data") { AsData.new(x: 1, y: 2, z: 3).x } if has_data?
   bench.report("PORO") { PORO.new(x: 1, y: 2, z: 3).x }
+  bench.report("Dry Struct") { DryStruct.new(x: 1, y: 2, z: 3).x }
+  bench.report("Dry Initializer") { DryInit.new(x: 1, y: 2, z: 3).x }
 
   bench.compare!
 end
@@ -101,6 +143,8 @@ Benchmark.ips do |bench|
   bench.report("defaults Struct") { WithDefaults::StdLib.new.x }
   bench.report("defaults Data") { WithDefaults::AsData.new.x } if has_data?
   bench.report("defaults PORO") { WithDefaults::PORO.new.x }
+  bench.report("defaults Dry Struct") { WithDefaults::DryStruct.new.x }
+  bench.report("defaults Dry Initializer") { WithDefaults::DryInit.new(x: 1, y: 2, z: 3).x }
 
   bench.compare!
 end
@@ -141,6 +185,24 @@ Benchmark.ips do |bench|
 
       attr_reader :x, :y
       attr_accessor :z
+    end
+  end
+
+  bench.report("Dry Struct") do
+    Class.new(Dry::Struct) do
+      attribute :x, Types.Instance(Numeric)
+      attribute :y, Types.Instance(Numeric)
+      attribute :z, Types.Instance(Numeric)
+    end
+  end
+
+  bench.report("Dry Initializer") do
+    Class.new do
+      extend Dry::Initializer
+
+      option :x, type: Types.Instance(Numeric)
+      option :y, type: Types.Instance(Numeric)
+      option :z, type: Types.Instance(Numeric)
     end
   end
 
@@ -191,6 +253,24 @@ Benchmark.ips do |bench|
 
       attr_reader :x, :y
       attr_accessor :z
+    end
+  end
+
+  bench.report("Dry Struct") do
+    Class.new(Dry::Struct) do
+      attribute :x, Types.Instance(Numeric).default(0)
+      attribute :y, Types.Instance(Numeric).default(1)
+      attribute :z, Types.Instance(Numeric).default(2)
+    end
+  end
+
+  bench.report("Dry Initializer") do
+    Class.new do
+      extend Dry::Initializer
+
+      option :x, type: Types.Instance(Numeric), default: -> { 0 }
+      option :y, type: Types.Instance(Numeric), default: -> { 1 }
+      option :z, type: Types.Instance(Numeric), default: -> { 2 }
     end
   end
 

@@ -6,6 +6,9 @@ gemspec
 
 group :development do
   gem "benchmark-ips", "~> 2.13"
+  gem "dry-initializer", "~> 3.1"
+  gem "dry-struct", "~> 1.6"
+  gem "dry-types", "~> 1.7"
   gem "minitest", "~> 5.20"
   gem "rake", "~> 13.0"
   gem "standard", "~> 1.33"
@@ -14,8 +17,6 @@ group :development do
 end
 
 group :test do
-  gem "dry-struct", "~> 1.6"
-  gem "dry-types", "~> 1.7"
   gem "minitest-reporters", "~> 1.6"
   gem "simplecov", "~> 0.22"
 end
