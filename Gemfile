@@ -11,6 +11,7 @@ group :development do
   gem "dry-types", "~> 1.7"
   gem "minitest", "~> 5.20"
   gem "rake", "~> 13.0"
+  gem "sorbet-runtime", "~> 0.5"
   gem "standard", "~> 1.33"
   gem "steep", "~> 1.7.0.dev.2"
   gem "tapioca", "~> 0.12"

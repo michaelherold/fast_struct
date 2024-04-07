@@ -191,6 +191,7 @@ DEPENDENCIES
   minitest-reporters (~> 1.6)
   rake (~> 13.0)
   simplecov (~> 0.22)
+  sorbet-runtime (~> 0.5)
   standard (~> 1.33)
   steep (~> 1.7.0.dev.2)
   tapioca (~> 0.12)

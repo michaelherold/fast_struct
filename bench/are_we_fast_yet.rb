@@ -12,6 +12,7 @@ require "benchmark/ips"
 require "dry-initializer"
 require "dry/struct"
 require "fast_struct"
+require "sorbet-runtime"
 
 module Types
   include Dry.Types()
@@ -61,6 +62,12 @@ class DryInit
   option :x, type: Types::Numeric
   option :y, type: Types::Numeric
   option :z, type: Types::Numeric
+end
+
+class Sorbet < T::Struct
+  const :x, Numeric
+  const :y, Numeric
+  prop :z, Numeric
 end
 
 module WithDefaults
@@ -113,6 +120,12 @@ module WithDefaults
     option :y, type: Types::Numeric, default: -> { 1 }
     option :z, type: Types::Numeric, default: -> { 2 }
   end
+
+  class Sorbet < T::Struct
+    const :x, Numeric, default: 0
+    const :y, Numeric, default: 1
+    prop :z, Numeric, default: 2
+  end
 end
 
 def headline(message)
@@ -132,6 +145,7 @@ Benchmark.ips do |bench|
   bench.report("PORO") { PORO.new(x: 1, y: 2, z: 3).x }
   bench.report("Dry Struct") { DryStruct.new(x: 1, y: 2, z: 3).x }
   bench.report("Dry Initializer") { DryInit.new(x: 1, y: 2, z: 3).x }
+  bench.report("T::Struct") { Sorbet.new(x: 1, y: 2, z: 3).x }
 
   bench.compare!
 end
@@ -145,6 +159,7 @@ Benchmark.ips do |bench|
   bench.report("defaults PORO") { WithDefaults::PORO.new.x }
   bench.report("defaults Dry Struct") { WithDefaults::DryStruct.new.x }
   bench.report("defaults Dry Initializer") { WithDefaults::DryInit.new(x: 1, y: 2, z: 3).x }
+  bench.report("defaults T::Struct") { WithDefaults::Sorbet.new.x }
 
   bench.compare!
 end
@@ -203,6 +218,14 @@ Benchmark.ips do |bench|
       option :x, type: Types.Instance(Numeric)
       option :y, type: Types.Instance(Numeric)
       option :z, type: Types.Instance(Numeric)
+    end
+  end
+
+  bench.report("T::Struct") do
+    Class.new(T::Struct) do
+      const :x, Numeric
+      const :y, Numeric
+      prop :z, Numeric
     end
   end
 
@@ -271,6 +294,14 @@ Benchmark.ips do |bench|
       option :x, type: Types.Instance(Numeric), default: -> { 0 }
       option :y, type: Types.Instance(Numeric), default: -> { 1 }
       option :z, type: Types.Instance(Numeric), default: -> { 2 }
+    end
+  end
+
+  bench.report("T::Struct") do
+    Class.new(T::Struct) do
+      const :x, Numeric, default: 0
+      const :y, Numeric, default: 1
+      prop :z, Numeric, default: 2
     end
   end
 
