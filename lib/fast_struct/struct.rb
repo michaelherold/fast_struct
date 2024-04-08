@@ -13,7 +13,12 @@ module FastStruct
 
     def self.inherited(child)
       super
-      child.instance_variable_set(:@props, Props.new)
+
+      if instance_variable_defined?(:@props)
+        child.instance_variable_set(:@props, @props.dup)
+      else
+        child.instance_variable_set(:@props, Props.new)
+      end
     end
 
     class << self

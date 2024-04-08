@@ -70,7 +70,9 @@ module FastStruct
         span = location.start_line..location.end_line
 
         span.cover?(@line) &&
-          (direct_superclass?(superclass) || superclass_in_namespace?(superclass))
+          (direct_superclass?(superclass) ||
+           superclass_in_namespace?(superclass) ||
+           maybe_reference_to_other_struct?(superclass))
       end
 
       def direct_superclass?(superclass)
@@ -95,6 +97,17 @@ module FastStruct
           child.name
         else
           superclass.name
+        end
+      end
+
+      def maybe_reference_to_other_struct?(superclass)
+        if superclass.is_a?(Prism::ConstantPathNode) || superclass.is_a?(Prism::ConstantReadNode)
+          Module.const_get(superclass.slice) < FastStruct::Struct
+        else
+          # Figure out how to winnow this down further; the hard one
+          # is a reference to a local variable, which is what we do most in
+          # the test suite
+          true
         end
       end
     end
