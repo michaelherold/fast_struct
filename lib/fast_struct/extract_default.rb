@@ -8,11 +8,7 @@ module FastStruct
     def self.call(name:, within:)
       return unless within
 
-      file = within.absolute_path or return
-      line = within.lineno or return
-      tree = Prism.parse(File.read(file)).value
-
-      define_node = DefineExtractor.extract(line:, tree:) or return
+      define_node = DefineExtractor.extract(within:) or return
       property_node = PropertyExtractor.extract(define_node:, name:) or return
 
       DefaultExtractor.extract(property_node)
@@ -21,12 +17,50 @@ module FastStruct
     private
 
     class DefineExtractor < Prism::Visitor
-      def self.extract(line:, tree:)
-        new(line).extract(tree)
+      class CacheEntry
+        def initialize(node)
+          @node = node
+        end
+
+        attr_reader :node
+
+        def ==(other)
+          other.instance_of?(CacheEntry) &&
+            node == other.node
+        end
+        alias_method :eql?, :==
+
+        def hash
+          [self.class, @node].hash
+        end
+
+        def cover?(line)
+          location = @node.location
+
+          location.start_line <= line &&
+            location.end_line >= line
+        end
       end
 
-      def initialize(line)
+      def self.cache
+        @cache ||= Hash.new { |h, k| h[k] = Set.new }
+      end
+
+      def self.extract(within:)
+        file = within.absolute_path or return
+        line = within.lineno or return
+
+        if (cache_entry = cache[file].find { |entry| entry.cover?(line) })
+          cache_entry.node
+        else
+          tree = Prism.parse(File.read(file)).value
+          new(file, line).extract(tree)
+        end
+      end
+
+      def initialize(file, line)
         super()
+        @file = file
         @line = line
         @define_node = nil
       end
@@ -38,10 +72,12 @@ module FastStruct
       end
 
       def visit_call_node(node)
-        if node.name == :define && (loc = node.location).start_line <= @line && loc.end_line >= @line
-          @define_node = node
-          return
-        end
+        return super unless node.name == :define
+
+        self.class.cache[@file].add(CacheEntry.new(node))
+
+        location = node.location
+        @define_node = node if location.start_line <= @line && location.end_line >= @line
 
         super
       end

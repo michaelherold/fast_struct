@@ -99,7 +99,6 @@ module FastStruct
     def visit_sum: (untyped node) -> untyped
   end
 
-
   class ExtractDefault
     def self.call: (name: Symbol name, within: Thread::Backtrace::Location) -> String?
 
@@ -123,9 +122,22 @@ module FastStruct
     class DefineExtractor < Prism::Visitor
       @define_node: Prism::CallNode?
 
-      def self.extract: (line: Integer, tree: Prism::ProgramNode) -> Prism::CallNode?
+      class CacheEntry
+        def ==: (untyped other) -> bool
+        alias eql? ==
+        def cover?: (Integer line) -> bool
+        def hash: () -> int
+        def node: () -> Prism::CallNode
 
-      def initialize: (Integer line) -> void
+        private
+
+        def initialize: (Prism::CallNode node) -> void
+      end
+
+      def self.cache: () -> Hash[String, Set[CacheEntry]]
+      def self.extract: (within: Thread::Backtrace::Location) -> Prism::CallNode?
+
+      def initialize: (String file, Integer line) -> void
       def extract: (Prism::ProgramNode tree) -> Prism::CallNode?
       def visit_call_node: (Prism::CallNode node) -> void
     end
