@@ -5,13 +5,17 @@ module FastStruct
   class Props
     def initialize
       @props = {}
+      @caller_location = nil
     end
 
-    def call(struct_class, &block)
+    def call(struct_class, caller_location, &block)
+      @caller_location = caller_location
       instance_exec(&block)
       add_sorbet_sig(struct_class)
       define_initializer(struct_class)
       define_attributes(struct_class)
+    ensure
+      @caller_location = nil
     end
 
     def const(name, type, default: nil)
@@ -76,7 +80,7 @@ module FastStruct
     def extract_default(name, default)
       return unless default
 
-      ExtractDefault.call(name: name, from: default).tap do |result|
+      ExtractDefault.call(name: name, within: @caller_location).tap do |result|
         raise FailedToExtractDefaultError unless result
       end
     end

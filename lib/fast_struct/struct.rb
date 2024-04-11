@@ -3,12 +3,17 @@
 
 module FastStruct
   class Struct
+    LINE_RANGE = 1..1
+    private_constant :LINE_RANGE
+
     def self.define(&block)
       if self == FastStruct::Struct
         raise RequiresSubclassError, "`define' must be called on a subclass of #{self}"
       end
 
-      props.call(self, &block)
+      caller_locations(LINE_RANGE) => [caller_location]
+
+      props.call(self, caller_location, &block)
     end
 
     def self.inherited(child)

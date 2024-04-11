@@ -5,12 +5,14 @@ require "prism"
 
 module FastStruct
   class ExtractDefault
-    def self.call(name:, from:)
-      file, line = from.source_location
+    def self.call(name:, within:)
+      return unless within
+
+      file = within.absolute_path or return
+      line = within.lineno or return
       tree = Prism.parse(File.read(file)).value
 
-      struct_node = StructExtractor.extract(line:, tree:) or return
-      define_node = DefineExtractor.extract(struct_node:) or return
+      define_node = DefineExtractor.extract(line:, tree:) or return
       property_node = PropertyExtractor.extract(define_node:, name:) or return
 
       DefaultExtractor.extract(property_node)
@@ -18,118 +20,25 @@ module FastStruct
 
     private
 
-    class StructExtractor < Prism::Visitor
+    class DefineExtractor < Prism::Visitor
       def self.extract(line:, tree:)
-        new(line:).extract(tree)
+        new(line).extract(tree)
       end
 
-      def initialize(line:)
+      def initialize(line)
         super()
         @line = line
-        @struct_node = nil
-        @module_path = []
+        @define_node = nil
       end
 
       def extract(tree)
         visit tree
 
-        @struct_node
-      end
-
-      def visit_module_node(node)
-        @module_path.push node
-        super
-        @module_path.pop
-      end
-
-      def visit_call_node(node)
-        return super unless node.name == :new
-        return super unless (receiver = node.receiver)
-        return super unless receiver.is_a?(Prism::ConstantReadNode)
-        return super unless receiver.name == :Class
-
-        superclass = node.arguments&.arguments&.first or return super
-        visit_struct_node(node, superclass:) or return super
-      end
-
-      def visit_class_node(node)
-        superclass = node.superclass or return super
-        visit_struct_node(node, superclass:) or return super
-      end
-
-      def visit_struct_node(node, superclass:)
-        if struct_superclass?(superclass, parent: node)
-          @struct_node = node
-        end
-      end
-
-      private
-
-      def struct_superclass?(superclass, parent:)
-        location = parent.location
-        span = location.start_line..location.end_line
-
-        span.cover?(@line) &&
-          (direct_superclass?(superclass) ||
-           superclass_in_namespace?(superclass) ||
-           maybe_reference_to_other_struct?(superclass))
-      end
-
-      def direct_superclass?(superclass)
-        return false unless superclass.is_a?(Prism::ConstantPathNode)
-        return false unless (child = superclass.child).is_a?(Prism::ConstantReadNode)
-        return false unless (parent = superclass.parent).is_a?(Prism::ConstantReadNode)
-
-        child.name == :Struct && parent.name == :FastStruct
-      end
-
-      def superclass_in_namespace?(superclass)
-        name_of_superclass(superclass) == :Struct &&
-          @module_path.any? do |mod|
-            constant_path = mod.constant_path
-
-            constant_path.is_a?(Prism::ConstantReadNode) && constant_path.name == :FastStruct
-          end
-      end
-
-      def name_of_superclass(superclass)
-        if superclass.is_a?(Prism::ConstantPathNode) && (child = superclass.child).is_a?(Prism::ConstantReadNode)
-          child.name
-        else
-          superclass.name
-        end
-      end
-
-      def maybe_reference_to_other_struct?(superclass)
-        if superclass.is_a?(Prism::ConstantPathNode) || superclass.is_a?(Prism::ConstantReadNode)
-          Module.const_get(superclass.slice) < FastStruct::Struct
-        else
-          # Figure out how to winnow this down further; the hard one
-          # is a reference to a local variable, which is what we do most in
-          # the test suite
-          true
-        end
-      end
-    end
-
-    class DefineExtractor < Prism::Visitor
-      def self.extract(struct_node:)
-        new.extract(struct_node)
-      end
-
-      def initialize
-        super()
-        @define_node = nil
-      end
-
-      def extract(struct_node)
-        visit struct_node
-
         @define_node
       end
 
       def visit_call_node(node)
-        if node.name == :define
+        if node.name == :define && (loc = node.location).start_line <= @line && loc.end_line >= @line
           @define_node = node
           return
         end
@@ -213,6 +122,6 @@ module FastStruct
       end
     end
 
-    private_constant :StructExtractor, :DefineExtractor, :PropertyExtractor, :DefaultExtractor
+    private_constant :DefineExtractor, :PropertyExtractor, :DefaultExtractor
   end
 end

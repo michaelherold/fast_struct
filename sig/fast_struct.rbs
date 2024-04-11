@@ -101,9 +101,7 @@ module FastStruct
 
 
   class ExtractDefault
-    type struct_node = (Prism::CallNode | Prism::ClassNode)
-
-    def self.call: (name: Symbol name, from: Proc) -> String?
+    def self.call: (name: Symbol name, within: Thread::Backtrace::Location) -> String?
 
     private
 
@@ -125,10 +123,10 @@ module FastStruct
     class DefineExtractor < Prism::Visitor
       @define_node: Prism::CallNode?
 
-      def self.extract: (struct_node: struct_node) -> Prism::CallNode?
+      def self.extract: (line: Integer, tree: Prism::ProgramNode) -> Prism::CallNode?
 
-      def initialize: () -> void
-      def extract: (struct_node struct_node) -> Prism::CallNode?
+      def initialize: (Integer line) -> void
+      def extract: (Prism::ProgramNode tree) -> Prism::CallNode?
       def visit_call_node: (Prism::CallNode node) -> void
     end
 
@@ -141,29 +139,6 @@ module FastStruct
       def initialize: (Symbol name) -> void
       def extract: (Prism::CallNode define_node) -> Prism::CallNode?
       def visit_call_node: (Prism::CallNode node) -> void
-    end
-
-    class StructExtractor < Prism::Visitor
-      @line: Integer
-      @struct_node: (Prism::CallNode | Prism::ClassNode)?
-      @module_path: Array[Prism::ModuleNode]
-
-      def self.extract: (line: Integer, tree: Prism::ProgramNode) -> struct_node?
-
-      def initialize: (line: Integer) -> void
-      def extract: (Prism::ProgramNode tree) -> struct_node?
-      def visit_module_node: (Prism::ModuleNode node) -> void
-      def visit_call_node: (Prism::CallNode node) -> void
-      def visit_class_node: (Prism::ClassNode node) -> void
-      def visit_struct_node: (struct_node node, superclass: Prism::Node) -> struct_node?
-
-      private
-
-      def direct_superclass?: (untyped superclass) -> bool
-      def struct_superclass?: (untyped superclass, parent: untyped) -> bool
-      def superclass_in_namespace?: (untyped superclass) -> bool
-      def maybe_reference_to_other_struct?: (untyped superclass) -> bool
-      def name_of_superclass: (untyped superclass) -> Symbol
     end
   end
 
@@ -180,7 +155,7 @@ module FastStruct
 
   class Props
     def initialize: () -> void
-    def call: (singleton(Struct) struct_class) { (*untyped) [self: Props] -> void } -> void
+    def call: (singleton(Struct) struct_class, Thread::Backtrace::Location? caller_location) { (*untyped) [self: Props] -> void } -> void
     def const: (Symbol name, Module type, ?default: ^() -> untyped) -> void
     def each_value: () { (Property arg0) -> void } -> void
     def empty?: () -> bool
@@ -195,6 +170,8 @@ module FastStruct
   end
 
   class Struct
+    LINE_RANGE: Range[Integer]
+
     def self.define: () { (*untyped) [self: Props] -> void } -> void
     def self.inherited: (Class child) -> void
     def self.props: () -> FastStruct::Props

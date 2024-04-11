@@ -17,8 +17,8 @@ end
 
 class FastStruct::ExtractDefault
   class << self
-    sig { params(name: Symbol, from: Proc).returns(T.nilable(String)) }
-    def call(name:, from:); end
+    sig { params(name: Symbol, within: T.nilable(::Thread::Backtrace::Location)).returns(T.nilable(String)) }
+    def call(name:, within:); end
   end
 end
 
@@ -69,10 +69,11 @@ class FastStruct::Props
   sig { void }
   def initialize
     @props = T.let({}, T::Hash[::Symbol, ::FastStruct::Property])
+    @caller_location = T.let(nil, T.nilable(::Thread::Backtrace::Location))
   end
 
-  sig { params(struct_class: T::Class[::FastStruct::Struct], block: T.proc.bind(::FastStruct::Props).params(arg0: T::Class[::FastStruct::Props]).returns(T.anything)).void }
-  def call(struct_class, &block); end
+  sig { params(struct_class: T::Class[::FastStruct::Struct], caller_location: ::Thread::Backtrace::Location, block: T.proc.bind(::FastStruct::Props).params(arg0: T::Class[::FastStruct::Props]).returns(T.anything)).void }
+  def call(struct_class, caller_location, &block); end
 
   sig { params(name: ::Symbol, type: ::FastStruct::Type, default: T.nilable(T.proc.returns(T.untyped))).void }
   def const(name, type, default: T.unsafe(nil)); end
