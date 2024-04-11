@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-# typed: false
+# typed: ignore
 # frozen_string_literal: true
 
 $LOAD_PATH.unshift File.expand_path(File.join(__dir__, "../lib"))
@@ -22,7 +22,6 @@ module Types
   Default1 = Numeric.default(1)
   Default2 = Numeric.default(2)
 end
-
 
 class Fast < FastStruct::Struct
   define do

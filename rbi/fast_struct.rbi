@@ -8,6 +8,13 @@ class FastStruct::Const < FastStruct::Property
   def writeable?; end
 end
 
+class FastStruct::DryTypesCompiler
+  class << self
+    sig { params(type: ::Dry::Types::Type).returns(String) }
+    def call(type); end
+  end
+end
+
 class FastStruct::ExtractDefault
   class << self
     sig { params(name: Symbol, from: Proc).returns(T.nilable(String)) }

@@ -91,7 +91,7 @@ module Tapioca
         end
         def generate_methods_for_property(mod, property)
           type = property.type
-          type_name = type_name_for(type)
+          type_name = type_name_for(type) || "T.untyped"
           name = property.name.to_s
 
           if property.writeable?
@@ -105,6 +105,7 @@ module Tapioca
           mod.create_method(name, return_type: type_name)
         end
 
+        sig { params(type: T.untyped).returns(T.nilable(String)) }
         def type_name_for(type)
           return type.to_s if type.is_a?(T::Types::Base)
           return ::FastStruct::DryTypesCompiler.call(type) if defined?(::Dry::Types::Type) && type.is_a?(::Dry::Types::Type)

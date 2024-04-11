@@ -162,6 +162,7 @@ module FastStruct
       def direct_superclass?: (untyped superclass) -> bool
       def struct_superclass?: (untyped superclass, parent: untyped) -> bool
       def superclass_in_namespace?: (untyped superclass) -> bool
+      def maybe_reference_to_other_struct?: (untyped superclass) -> bool
       def name_of_superclass: (untyped superclass) -> Symbol
     end
   end
